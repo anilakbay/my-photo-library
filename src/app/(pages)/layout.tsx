@@ -1,5 +1,5 @@
 import "@/app/globals.css";
-import { Image as LucideImage } from "lucide-react"; // Lucide ikonu import edildi
+import { Image as IconImage } from "lucide-react"; // 'Image' ismini değiştir
 
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
@@ -18,7 +18,7 @@ export default function RootLayout({
           <SidebarLinks
             links={[
               {
-                icon: <LucideImage className="w-5 h-5" />, // Lucide ikonu kullanıldı
+                icon: <IconImage className="w-5 h-5" />, // Burada ismi değiştirdik
                 label: "Photos",
                 path: "/",
               },

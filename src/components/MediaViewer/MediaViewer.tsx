@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import {
   Blend,
@@ -11,11 +11,9 @@ import {
   Pencil,
   Trash2,
   Wand2,
-  Image,
+  Image as LucideImage,
   Ban,
 } from "lucide-react";
-import { CldImage } from "next-cloudinary";
-
 import Container from "@/components/Container";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -40,101 +38,64 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-import { CloudinaryResource } from "@/types/cloudinary";
+import Image from "next/image";
 
 interface Deletion {
   state: string;
 }
 
-const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
+const MediaViewer = ({
+  resource,
+}: {
+  resource: { id: string; width: number; height: number };
+}) => {
   const sheetFiltersRef = useRef<HTMLDivElement | null>(null);
   const sheetInfoRef = useRef<HTMLDivElement | null>(null);
-
-  // Sheet / Dialog UI state, basically controlling keeping them open or closed
 
   const [filterSheetIsOpen, setFilterSheetIsOpen] = useState(false);
   const [infoSheetIsOpen, setInfoSheetIsOpen] = useState(false);
   const [deletion, setDeletion] = useState<Deletion>();
 
-  // Canvas sizing based on the image dimensions. The tricky thing about
-  // showing a single image in a space like this in a responsive way is trying
-  // to take up as much room as possible without distorting it or upscaling
-  // the image. Since we have the resource width and height, we can dynamically
-  // determine whether it's landscape, portrait, or square, and change a little
-  // CSS to make it appear centered and scalable!
-
   const canvasHeight = resource.height;
   const canvasWidth = resource.width;
 
-  const isSquare = canvasHeight === canvasWidth;
-  const isLandscape = canvasWidth > canvasHeight;
-  const isPortrait = canvasHeight > canvasWidth;
+  const imgStyles: Record<string, string | number> = {
+    maxHeight: canvasHeight > canvasWidth ? "100vh" : "none", // 'none' kullanarak undefined yerine geçerli bir değer sağlıyoruz
+    maxWidth: canvasWidth > canvasHeight ? resource.width : "none", // 'none' kullanarak undefined yerine geçerli bir değer sağlıyoruz
+    width: "100%",
+    height: "auto",
+  };
 
-  const imgStyles: Record<string, string | number> = {};
-
-  if (isLandscape) {
-    imgStyles.maxWidth = resource.width;
-    imgStyles.width = "100%";
-    imgStyles.height = "auto";
-  } else if (isPortrait || isSquare) {
-    imgStyles.maxHeight = resource.height;
-    imgStyles.height = "100vh";
-    imgStyles.width = "auto";
-  }
-
-  /**
-   * closeMenus
-   * @description Closes all panel menus and dialogs
-   */
-
-  function closeMenus() {
+  const closeMenus = () => {
     setFilterSheetIsOpen(false);
     setInfoSheetIsOpen(false);
     setDeletion(undefined);
-  }
+  };
 
-  /**
-   * handleOnDeletionOpenChange
-   */
+  const handleOnDeletionOpenChange = (isOpen: boolean) => {
+    if (!isOpen) setDeletion(undefined);
+  };
 
-  function handleOnDeletionOpenChange(isOpen: boolean) {
-    // Reset deletion dialog if the user is closing it
-    if (!isOpen) {
-      setDeletion(undefined);
-    }
-  }
+  const handleOnOutsideClick = useCallback((event: MouseEvent) => {
+    const excludedElements = Array.from(
+      document.querySelectorAll('[data-exclude-close-on-click="true"]')
+    );
+    const clickedExcludedElement = excludedElements.some((element) =>
+      event.composedPath().includes(element)
+    );
 
-  // Listen for clicks outside of the panel area and if determined
-  // to be outside, close the panel. This is marked by using
-  // a data attribute to provide an easy way to reference it on
-  // multiple elements
+    if (!clickedExcludedElement) closeMenus();
+  }, []);
 
   useEffect(() => {
     document.body.addEventListener("click", handleOnOutsideClick);
     return () => {
       document.body.removeEventListener("click", handleOnOutsideClick);
     };
-  }, []);
-
-  function handleOnOutsideClick(event: MouseEvent) {
-    const excludedElements = Array.from(
-      document.querySelectorAll('[data-exclude-close-on-click="true"]')
-    );
-    const clickedExcludedElement =
-      excludedElements.filter((element) =>
-        event.composedPath().includes(element)
-      ).length > 0;
-
-    if (!clickedExcludedElement) {
-      closeMenus();
-    }
-  }
+  }, [handleOnOutsideClick]);
 
   return (
     <div className="h-screen bg-black px-0">
-      {/** Modal for deletion */}
-
       <Dialog
         open={!!deletion?.state}
         onOpenChange={handleOnDeletionOpenChange}
@@ -145,15 +106,13 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
               Are you sure you want to delete?
             </DialogTitle>
           </DialogHeader>
-          <DialogFooter className="justify-center sm:justify-center">
+          <DialogFooter className="justify-center">
             <Button variant="destructive">
               <Trash2 className="h-4 w-4 mr-2" /> Delete
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/** Edit panel for transformations and filters */}
 
       <Sheet modal={false} open={filterSheetIsOpen}>
         <SheetContent
@@ -186,7 +145,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
                 <li>
                   <Button
                     variant="ghost"
-                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 border-white`}
+                    className="text-left justify-start w-full h-14 border-4 bg-zinc-700 border-white"
                   >
                     <Ban className="w-5 h-5 mr-3" />
                     <span className="text-[1.01rem]">None</span>
@@ -204,9 +163,9 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
                 <li>
                   <Button
                     variant="ghost"
-                    className={`text-left justify-start w-full h-14 border-4 bg-zinc-700 border-white`}
+                    className="text-left justify-start w-full h-14 border-4 bg-zinc-700 border-white"
                   >
-                    <Image className="w-5 h-5 mr-3" />
+                    <LucideImage className="w-5 h-5 mr-3" />
                     <span className="text-[1.01rem]">Original</span>
                   </Button>
                 </li>
@@ -220,14 +179,13 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
               </SheetHeader>
               <ul className="grid grid-cols-2 gap-2">
                 <li>
-                  <button className={`w-full border-4 border-white`}>
-                    <img
-                      width={resource.width}
-                      height={resource.height}
-                      src="/icon-1024x1024.png"
-                      alt="No Filter"
-                    />
-                  </button>
+                  <Image
+                    width={resource.width}
+                    height={resource.height}
+                    src="/icon-1024x1024.png"
+                    alt="No Filter"
+                    style={imgStyles}
+                  />
                 </li>
               </ul>
             </TabsContent>
@@ -265,15 +223,13 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
             <Button
               variant="outline"
               className="w-full h-14 text-left justify-center items-center bg-transparent border-zinc-600"
-              onClick={() => closeMenus()}
+              onClick={closeMenus}
             >
               <span className="text-[1.01rem]">Close</span>
             </Button>
           </SheetFooter>
         </SheetContent>
       </Sheet>
-
-      {/** Info panel for asset metadata */}
 
       <Sheet modal={false} open={infoSheetIsOpen}>
         <SheetContent
@@ -293,7 +249,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
                   ID
                 </strong>
                 <span className="flex gap-4 items-center text-zinc-100">
-                  {resource.public_id}
+                  {resource.id}
                 </span>
               </li>
             </ul>
@@ -302,7 +258,7 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
             <Button
               variant="outline"
               className="w-full h-14 text-left justify-center items-center bg-transparent border-zinc-600"
-              onClick={() => closeMenus()}
+              onClick={closeMenus}
             >
               <span className="text-[1.01rem]">Close</span>
             </Button>
@@ -310,68 +266,44 @@ const MediaViewer = ({ resource }: { resource: CloudinaryResource }) => {
         </SheetContent>
       </Sheet>
 
-      {/** Asset management navbar */}
-
       <Container className="fixed z-10 top-0 left-0 w-full h-16 flex items-center justify-between gap-4 bg-gradient-to-b from-black">
         <div className="flex items-center gap-4">
-          <ul>
-            <li>
-              <Link
-                href="/"
-                className={`${buttonVariants({ variant: "ghost" })} text-white`}
-              >
-                <ChevronLeft className="h-6 w-6" />
-                Back
-              </Link>
-            </li>
-          </ul>
+          <Link href="/" className="flex items-center">
+            <Button
+              variant="ghost"
+              className={buttonVariants({ variant: "default" })}
+            >
+              <ChevronLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+          </Link>
+          <Button variant="outline" onClick={() => setInfoSheetIsOpen(true)}>
+            <Info className="w-4 h-4 mr-2" />
+            Info
+          </Button>
+          <Button variant="outline" onClick={() => setFilterSheetIsOpen(true)}>
+            <LucideImage className="w-4 h-4 mr-2" />
+            Edit
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setDeletion({ state: "open" })}
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Delete
+          </Button>
         </div>
-        <ul className="flex items-center gap-4">
-          <li>
-            <Button
-              variant="ghost"
-              className="text-white"
-              onClick={() => setFilterSheetIsOpen(true)}
-            >
-              <Pencil className="h-6 w-6" />
-              <span className="sr-only">Edit</span>
-            </Button>
-          </li>
-          <li>
-            <Button
-              variant="ghost"
-              className="text-white"
-              onClick={() => setInfoSheetIsOpen(true)}
-            >
-              <Info className="h-6 w-6" />
-              <span className="sr-only">Info</span>
-            </Button>
-          </li>
-          <li>
-            <Button
-              variant="ghost"
-              className="text-white"
-              onClick={() => setDeletion({ state: "confirm" })}
-            >
-              <Trash2 className="h-6 w-6" />
-              <span className="sr-only">Delete</span>
-            </Button>
-          </li>
-        </ul>
       </Container>
 
-      {/** Asset viewer */}
-
-      <div className="relative flex justify-center items-center align-center w-full h-full">
-        <CldImage
-          className="object-contain"
+      <main className="flex justify-center items-center h-full">
+        <Image
           width={resource.width}
           height={resource.height}
-          src={resource.public_id}
-          alt={`Image ${resource.public_id}`}
+          src="/icon-1024x1024.png"
+          alt="Resource Preview"
           style={imgStyles}
         />
-      </div>
+      </main>
     </div>
   );
 };

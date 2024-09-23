@@ -3,8 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Plus, X, Save } from "lucide-react";
-import Image from "next/image";
-import { CldImage } from "next-cloudinary";
 
 import Container from "@/components/Container";
 import { Button } from "@/components/ui/button";
@@ -24,43 +22,36 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-import { CloudinaryResource } from "@/types/cloudinary";
-
-import { useResources } from "@/hooks/use-resources";
-
 interface MediaGalleryProps {
-  resources: Array<CloudinaryResource>;
-  tag?: string;
+  resources: Array<{ id: string }>;
 }
 
-const MediaGallery = ({
-  resources: initialResources,
-  tag,
-}: MediaGalleryProps) => {
-  const { resources } = useResources({
-    initialResources,
-    tag,
-  });
+const MediaGallery = ({ resources }: MediaGalleryProps) => {
+  const [selected, setSelected] = useState<Array<string>>([]);
+  const [creation, setCreation] = useState();
 
-  const [selected, setSelected] = useState<string[]>([]);
-  const [creation, setCreation] = useState<string | undefined>(undefined);
+  /**
+   * handleOnClearSelection
+   */
 
-  const handleOnClearSelection = () => setSelected([]);
+  function handleOnClearSelection() {
+    setSelected([]);
+  }
 
-  const handleOnCreationOpenChange = (isOpen: boolean) => {
-    if (!isOpen) setCreation(undefined);
-  };
+  /**
+   * handleOnCreationOpenChange
+   */
 
-  const handleOnSelectResource = (checked: boolean, id: string) => {
-    setSelected((prev) =>
-      checked
-        ? Array.from(new Set([...prev, id]))
-        : prev.filter((item) => item !== id)
-    );
-  };
+  function handleOnCreationOpenChange(isOpen: boolean) {
+    if (!isOpen) {
+      setCreation(undefined);
+    }
+  }
 
   return (
     <>
+      {/** Popup modal used to preview and confirm new creations */}
+
       <Dialog open={!!creation} onOpenChange={handleOnCreationOpenChange}>
         <DialogContent>
           <DialogHeader>
@@ -75,60 +66,84 @@ const MediaGallery = ({
         </DialogContent>
       </Dialog>
 
+      {/** Management navbar presented when assets are selected */}
+
       {selected.length > 0 && (
         <Container className="fixed z-50 top-0 left-0 w-full h-16 flex items-center justify-between gap-4 bg-white shadow-lg">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={handleOnClearSelection}>
-              <X className="h-6 w-6" />
-              <span className="sr-only">Clear Selected</span>
-            </Button>
-            <p>{selected.length} Selected</p>
+            <ul>
+              <li>
+                <Button variant="ghost" onClick={handleOnClearSelection}>
+                  <X className="h-6 w-6" />
+                  <span className="sr-only">Clear Selected</span>
+                </Button>
+              </li>
+            </ul>
+            <p>
+              <span>{selected?.length} Selected</span>
+            </p>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost">
-                <Plus className="h-6 w-6" />
-                <span className="sr-only">Create New</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56">
-              <DropdownMenuGroup>
-                <DropdownMenuItem>
-                  <span>Option</span>
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ul className="flex items-center gap-4">
+            <li>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost">
+                    <Plus className="h-6 w-6" />
+                    <span className="sr-only">Create New</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56">
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem>
+                      <span>Option</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </li>
+          </ul>
         </Container>
       )}
+
+      {/** Gallery */}
 
       <Container>
         <form>
           {Array.isArray(resources) && (
-            <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 mb-12 gap-4">
-              {resources.map(({ id, public_id, secure_url, width, height }) => {
-                const isChecked = selected.includes(id);
+            <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 mb-12">
+              {resources.map((resource) => {
+                const isChecked = selected.includes(resource.id);
+
+                function handleOnSelectResource(checked: boolean) {
+                  setSelected((prev) => {
+                    if (checked) {
+                      return Array.from(
+                        new Set([...(prev || []), resource.id])
+                      );
+                    } else {
+                      return prev.filter((id) => id !== resource.id);
+                    }
+                  });
+                }
 
                 return (
-                  <li key={id} className="bg-white dark:bg-zinc-700">
+                  <li key={resource.id} className="bg-white dark:bg-zinc-700">
                     <div className="relative group">
                       <label
-                        className={`absolute top-3 left-3 p-1 transition-opacity ${
+                        className={`absolute ${
                           isChecked ? "opacity-100" : "opacity-0"
-                        } group-hover:opacity-100`}
-                        htmlFor={id}
+                        } group-hover:opacity-100 transition-opacity top-3 left-3 p-1`}
+                        htmlFor={resource.id}
                       >
                         <span className="sr-only">
-                          Select Image &quot;{id}&quot;
+                          Select Image &quot;{resource.id}&quot;
                         </span>
                         <Checkbox
                           className={`w-6 h-6 rounded-full bg-white shadow ${
                             isChecked ? "border-blue-500" : "border-zinc-200"
                           }`}
-                          id={id}
-                          onCheckedChange={(checked) =>
-                            handleOnSelectResource(checked as boolean, id)
-                          }
+                          id={resource.id}
+                          onCheckedChange={handleOnSelectResource}
                           checked={isChecked}
                         />
                       </label>
@@ -136,14 +151,13 @@ const MediaGallery = ({
                         className={`block cursor-pointer border-8 transition-[border] ${
                           isChecked ? "border-blue-500" : "border-white"
                         }`}
-                        href={`/resources/${resource.asset_id}`}
+                        href="#"
                       >
-                        <Image
-                          width={width}
-                          height={height}
-                          src={secure_url}
-                          alt={public_id}
-                          sizes="(max-width: 600px) 100vw, (max-width: 1200px) 50vw, 33vw" // Responsive resim boyutları
+                        <img
+                          width="300"
+                          height="300"
+                          src="/icon-1024x1024.png"
+                          alt="Cloudinary Logo"
                         />
                       </Link>
                     </div>
