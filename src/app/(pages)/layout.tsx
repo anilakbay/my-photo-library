@@ -1,14 +1,14 @@
-import '@/app/globals.css';
-import { Image } from 'lucide-react'
+import "@/app/globals.css";
+import { Image as LucideImage } from "lucide-react"; // Lucide ikonu import edildi
 
-import Nav from '@/components/Nav';
-import Footer from '@/components/Footer';
-import SidebarLinks from '@/components/SidebarLinks';
+import Nav from "@/components/Nav";
+import Footer from "@/components/Footer";
+import SidebarLinks from "@/components/SidebarLinks";
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <div className="grid grid-rows-[auto_1fr_auto] h-screen">
@@ -18,16 +18,16 @@ export default function RootLayout({
           <SidebarLinks
             links={[
               {
-                icon: <Image className="w-5 h-5" />,
-                label: 'Photos',
-                path: '/'
-              }
+                icon: <LucideImage className="w-5 h-5" />, // Lucide ikonu kullanıldı
+                label: "Photos",
+                path: "/",
+              },
             ]}
           />
         </aside>
-        <div>{ children }</div>
+        <div>{children}</div>
       </main>
       <Footer />
     </div>
-  )
+  );
 }
