@@ -1,26 +1,13 @@
-# Photo Library Starter
+My Photo Library
+My Photo Library, kullanıcıların fotoğraflarını yönetmesini sağlayan modern bir medya görüntüleyici uygulamasıdır. Kullanıcı dostu arayüzü sayesinde, fotoğraflarınızı kolayca görüntüleyebilir, düzenleyebilir ve silebilirsiniz.
 
-Hey freeCodeCamp 👋 this is your starting point for digging into building your own Photo Library using Next.js and Cloudinary.
-
-## 🚀 Getting Started
-
-To get started, first create your new application by running the command below:
-
-```
-npx create-next-app@latest -e https://github.com/colbyfayock/demo-photo-library-starter my-photo-library
-```
-
-> Tip: Alternatively, you can clone this repository, but running the above command helps with some additional tasks like resetting git history and installing dependencies!
-
-## Follow Along
-
-Coming here from another place? Be sure to follow along with the tutorial over on freeCodeCamp:
-- Video: https://www.youtube.com/watch?v=l71rTm_0260
-
-## More Tutorials & Walkthroughs
-
-🐦 [Follow me on Twitter](https://twitter.com/colbyfayock)
-
-📺 [Subscribe on YouTube](https://www.youtube.com/colbyfayock)
-
-✉️ [Sign Up for My Newsletter](https://colbyfayock.com/newsletter)
+Özellikler
+Görsel Yönetimi: Kullanıcılar, fotoğraflarını hızlı bir şekilde görüntüleyebilir ve yönetebilir.
+Filtreleme ve Kırpma: Etkileşimli menü aracılığıyla fotoğraflar üzerinde filtreleme ve kırpma işlemleri gerçekleştirebilirsiniz.
+Detaylı Bilgi Görüntüleme: Her bir fotoğraf için ayrıntılı bilgi görüntüleme olanağı sunar.
+Güvenli Silme: Fotoğrafları silmeden önce onay isteyerek kullanıcı güvenliğini sağlar.
+Teknolojiler
+React: Kullanıcı arayüzü oluşturmak için.
+Next.js: Sunucu tarafı render ve statik site oluşturma için.
+TailwindCSS: Kullanıcı arayüzü tasarımı için.
+Lucide-React: İkonlar için.
